@@ -1,5 +1,7 @@
 # patient-menu-site
 
+* jv 11
+* IntelliJ Idea 2021, run with `idea`
 * Run with ./gradelw quarkusDev
 * Load localhost:8080/fruits
 

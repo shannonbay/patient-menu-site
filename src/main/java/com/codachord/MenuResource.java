@@ -10,17 +10,20 @@ import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 
 import static com.codachord.Fruit.from;
 
@@ -42,15 +45,26 @@ public class MenuResource {
         }
     }
 
- /*   @POST
+    @POST
     public Uni<Response> create(MenuCalendar menuCalendar) {
         return menuCalendar.save(client)
                 .onItem().transform(id -> URI.create("/menu/" + id))
                 .onItem().transform(uri -> Response.created(uri).build());
-    }*/
+    }
+    
+    @POST
+    @Path("all")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Multi<Response> create(List<MenuItem> menuitems) {
+    	log.info("ITS ME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        return new Menu(menuitems).save(client)
+                .onItem().transform(id -> URI.create("/menu/all"))
+                .onItem().transform(uri -> Response.created(uri).build());
+    }
 
     @POST
     @Path("item")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Uni<Response> create(MenuItem fruit) {
         log.info("Create menu item " + fruit);
         return fruit.save(client)
@@ -83,16 +97,16 @@ public class MenuResource {
 
     @GET
     @Path("{day}")
-    public Uni<Response> getSingle(@PathParam("day") int id) {
-        return MenuItem.findById(client, id)
+    public Uni<Response> getSingle(@PathParam("day") String day) {
+        return MenuItem.findById(client, day)
                 .onItem().transform(fruit -> fruit != null ? Response.ok(fruit) : Response.status(Status.NOT_FOUND))
                 .onItem().transform(ResponseBuilder::build);
     }
 
     @DELETE
-    @Path("{id}")
-    public Uni<Response> delete(@PathParam("id") Long id) {
-        return MenuItem.delete(client, id)
+    @Path("{day}")
+    public Uni<Response> delete(@PathParam("day") String day) {
+        return MenuItem.delete(client, day)
                 .onItem().transform(deleted -> deleted ? Status.NO_CONTENT : Status.NOT_FOUND)
                 .onItem().transform(status -> Response.status(status).build());
     }

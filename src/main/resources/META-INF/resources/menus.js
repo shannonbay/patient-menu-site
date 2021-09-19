@@ -3,21 +3,28 @@ function refresh() {
         var list = calendar_start.start;
         $('#new-start-date').val(list);
     });
+
+    //$('#dinner-menu').html('<tr><td>test</td></tr>');
+
     $.get('/menu', function (fruits) {
         var list = '';
         (fruits || []).forEach(function (fruit) {
-            list = list
-                + '<tr>'
-                + '<td>' + fruit.day + '</td>'
-                + '<td>' + fruit.name + '</td>'
-                + '<td><a href="#" onclick="deleteFruit(' + fruit.day + ')">Delete</a></td>'
-                + '</tr>'
+            list = list + `<tr>
+                   <td>${fruit.day}</td>
+                   <td><input size=100 value="${fruit.name}" /></td>
+               </tr>`
         });
+        for(var i = fruits.length; i < 4; i++){
+            list = list + `<tr>
+                   <td>${i+1}</td>
+                   <td contenteditable='true'><input style="min-width:200ch/></td>
+               </tr>`
+        }
         if (list.length > 0) {
             list = ''
-                + '<table><thead><th>Id</th><th>Name</th><th></th></thead>'
+                + '<tr><th>Day</th><th>Name</th></tr>'
                 + list
-                + '</table>';
+                + '';
         } else {
             list = "No fruits in database"
         }
@@ -43,15 +50,27 @@ $(document).ready(function () {
             data: JSON.stringify({start: startDate})
         }).then(alert('Start Date Updated to ' + startDate)).then(refresh);
     });
-
-    $('#create-dinner-main').click(function () {
-        var dinnerMain = $('#dinner-main').val();
-        $.post({
-            url: '/menu/item',
+    
+    $('#submit-dinner-menu').click(function () {
+        var dinnerMenu = document.getElementById('dinner-menu');
+		var data = [];
+				
+        for (var i = 1, row; row = dinnerMenu.rows[i]; i++) {
+            //iterate through rows
+            //rows would be accessed using the "row" variable assigned in the for loop
+            var main = row.cells[1].querySelector('input').value;
+            data.push({day: i, name: main + ""});
+        }
+		$.post({
+            url: '/menu/all',
             contentType: 'application/json',
-            data: JSON.stringify({name: dinnerMain, active: "false"})
-        }).then(alert('Submitted new main "' + dinnerMain + "'")).then(refresh);
-    });
+            data: JSON.stringify(data),
+            success: function (data) {
+	           alert('Success!')
+            }
+        }).then(alert('Submitted new main ' + data)).then(refresh);
 
-    refresh();
+    });
+			
+    refresh();        
 });

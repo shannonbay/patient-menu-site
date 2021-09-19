@@ -12,11 +12,9 @@ import static com.codachord.Fruit.from;
 
 public class MenuItem {
 
-    public int day;
+    public String day;
 
     public String name;
-
-    public boolean active = true;
 
     public MenuItem() {
     }
@@ -25,35 +23,35 @@ public class MenuItem {
         this.name = name;
     }
 
-    public MenuItem(int id, String name) {
-        this.day = id;
+    public MenuItem(String day, String name) {
+        this.day = day;
         this.name = name;
     }
 
     static MenuItem from(Row row) {
-        return new MenuItem(row.getInteger("day"), row.getString("name"));
+        return new MenuItem(row.getString("day"), row.getString("name"));
     }
 
     public Uni<Long> save(MySQLPool client) {
-        return client.preparedQuery("INSERT INTO dinner_menu (name, active) VALUES (?, ?) ON DUPLICATE KEY UPDATE name=?, active=?").execute(Tuple.of(name, active, name, active))
+        return client.preparedQuery("INSERT INTO dinner_menu (day, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE day=?, name=?").execute(Tuple.of(day, name, day, name))
                 .onItem().transform(pgRowSet -> pgRowSet.property(MySQLClient.LAST_INSERTED_ID));
     }
 
     public static Multi<MenuItem> findAll(MySQLPool client) {
-        return client.query("SELECT day, name FROM dinner_menu").execute()
+        return client.query("SELECT day, name FROM dinner_menu ORDER BY day").execute()
                 .onItem().transformToMulti(set -> Multi.createFrom().iterable(set))
                 .onItem().transform(MenuItem::from);
     }
 
-    public static Uni<MenuItem> findById(MySQLPool client, int id) {
-        return client.preparedQuery("SELECT day, name FROM dinner_menu WHERE day = ?").execute(Tuple.of(id))
+    public static Uni<MenuItem> findById(MySQLPool client, String day) {
+        return client.preparedQuery("SELECT day, name FROM dinner_menu WHERE day = ?").execute(Tuple.of(day))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
     }
 
 
-    public static Uni<Boolean> delete(MySQLPool client, Long id) {
-        return client.preparedQuery("DELETE FROM dinner_menu WHERE day = ?").execute(Tuple.of(id))
+    public static Uni<Boolean> delete(MySQLPool client, String day) {
+        return client.preparedQuery("DELETE FROM dinner_menu WHERE day = ?").execute(Tuple.of(day))
                 .onItem().transform(pgRowSet -> pgRowSet.rowCount() == 1);
     }
 }
