@@ -6,6 +6,7 @@
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script type="application/javascript" src="menus.js"></script>
+    <link rel="stylesheet" href="menu.css">
 </head>
 <body>
 
@@ -16,11 +17,50 @@
 <input id="new-start-date" type="date"/>
 <button id="submit-start-date" type="button">Update Start Date</button>
 
-<h2>Dinner Menu</h2>
-<table id="dinner-menu" border="3">
+<h2>Tabs</h2>
+<p>Click on the buttons inside the tabbed menu:</p>
 
-</table>
-<button id="submit-dinner-menu" type="button">Submit</button>
+<div class="tab">
+    <button class="tablinks" onclick="openCity(event, 'lunch')">Lunch</button>
+    <button class="tablinks" onclick="openCity(event, 'dinner')">Dinner</button>
+</div>
+
+<div id="dinner" class="tabcontent">
+    <h3>Dinner Menu</h3>
+    <p>Dinner fit for a king.</p>
+  
+    <table id="dinner-menu" border="3">
+    
+    </table>
+    <button id="submit-dinner-menu" type="button">Submit</button>
+</div>
+
+<div id="lunch" class="tabcontent">
+    <h3>Lunch in Paris</h3>
+    <p>Paris is the capital of France.</p>
+    <table id="lunch-menu" border="3">
+    
+    </table>
+    <button id="submit-lunch-menu" type="button">Submit</button> 
+</div>
+  
+<script>
+function openCity(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+openCity(null, 'Lunch');
+</script>
 
 </body>
 </html>

@@ -1,31 +1,26 @@
 package com.codachord;
 
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
-import io.vertx.mutiny.sqlclient.RowSet;
-import io.vertx.mutiny.sqlclient.Tuple;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
-import java.net.URI;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.List;
 
-import static com.codachord.Fruit.from;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
+
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.mysqlclient.MySQLPool;
 
 @Path("menu")
 public class MenuResource {
@@ -37,7 +32,6 @@ public class MenuResource {
     @ConfigProperty(name = "myapp.schema.create", defaultValue = "true")
     boolean schemaCreate;
 
-    private String test = "blah";
     @PostConstruct
     void config() {
         if (schemaCreate) {
@@ -53,12 +47,20 @@ public class MenuResource {
     }
     
     @POST
-    @Path("all")
+    @Path("dinner")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Multi<Response> create(List<MenuItem> menuitems) {
-    	log.info("ITS ME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        return new Menu(menuitems).save(client)
-                .onItem().transform(id -> URI.create("/menu/all"))
+    public Multi<Response> dinner(List<MenuItem> menuitems) {
+    	return Menu.dinner.save(menuitems, client)
+                .onItem().transform(id -> URI.create("/menu/dinner"))
+                .onItem().transform(uri -> Response.created(uri).build());
+    }
+    
+    @POST
+    @Path("lunch")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Multi<Response> lunch(List<MenuItem> menuitems) {
+    	return Menu.lunch.save(menuitems, client)
+                .onItem().transform(id -> URI.create("/menu/lunch"))
                 .onItem().transform(uri -> Response.created(uri).build());
     }
 
@@ -79,36 +81,21 @@ public class MenuResource {
     }
 
     @GET
-    public Multi<MenuItem> get() {
-        return MenuItem.findAll(client);
+    @Path("lunch")
+    public Multi<MenuItem> lunch() {
+        return Menu.lunch.findAll(client);
     }
-
-    public static Multi<Fruit> findAll(MySQLPool client) {
-        return client.query("SELECT id, name FROM fruits ORDER BY name ASC").execute()
-                .onItem().transformToMulti(set -> Multi.createFrom().iterable(set))
-                .onItem().transform(Fruit::from);
+    
+    @GET
+    @Path("dinner")
+    public Multi<MenuItem> dinner() {
+        return Menu.dinner.findAll(client);
     }
-/*
-    public static Multi<Fruit> findAll(MySQLPool client) {
-        return client.query("SELECT id, name FROM fruits ORDER BY name ASC").execute()
-                .onItem().transformToMulti(set -> Multi.createFrom().iterable(set))
-                .onItem().transform(Fruit::from);
-    }*/
 
     @GET
-    @Path("{day}")
-    public Uni<Response> getSingle(@PathParam("day") String day) {
-        return MenuItem.findById(client, day)
-                .onItem().transform(fruit -> fruit != null ? Response.ok(fruit) : Response.status(Status.NOT_FOUND))
-                .onItem().transform(ResponseBuilder::build);
-    }
-
-    @DELETE
-    @Path("{day}")
-    public Uni<Response> delete(@PathParam("day") String day) {
-        return MenuItem.delete(client, day)
-                .onItem().transform(deleted -> deleted ? Status.NO_CONTENT : Status.NOT_FOUND)
-                .onItem().transform(status -> Response.status(status).build());
+    @Path("{menu}/{day}")
+    public Multi<MenuItem> getSingle(@PathParam("menu") String menu, @PathParam("day") String day) {
+        return Menu.valueOf(menu).findByDay(client, day);
     }
 
     private void initdb() {
