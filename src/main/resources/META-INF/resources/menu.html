@@ -19,7 +19,12 @@
 
 <h2>Tabs</h2>
 <p>Click on the buttons inside the tabbed menu:</p>
-
+<select id="day" name="day" onchange="refresh()">
+    <option value="1">Day 1</option>
+    <option value="2">Day 2</option>
+    <option value="3">Day 3</option>
+    <option value="4">Day 4</option>
+</select>
 <div class="tab">
     <button class="tablinks" onclick="openCity(event, 'lunch')">Lunch</button>
     <button class="tablinks" onclick="openCity(event, 'dinner')">Dinner</button>
@@ -38,6 +43,7 @@
 <div id="lunch" class="tabcontent">
     <h3>Lunch in Paris</h3>
     <p>Paris is the capital of France.</p>
+
     <table id="lunch-menu" border="3">
     
     </table>

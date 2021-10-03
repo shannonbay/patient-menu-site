@@ -6,37 +6,31 @@ function refresh() {
 
     //$('#dinner-menu').html('<tr><td>test</td></tr>');
 
-    $.get('/menu/dinner', function (fruits) {
+    var day = $('#day').val();
+    $.get('/menu/dinner/' + day, function (fruits) {
         menumenu(fruits, '#dinner-menu')
     });
-    $.get('/menu/lunch', function (fruits) {
+    $.get('/menu/lunch/' + day, function (fruits) {
         menumenu(fruits, '#lunch-menu')
     });
 }
 
 function menumenu(fruits, table){
 	var list = '';
+	var menu = ["", "", "", ""];
     (fruits || []).forEach(function (fruit) {
-        list = list + `<tr>
-               <td>${fruit.day}</td>
-               <td>${fruit.optionId}</td>
-               <td><input size=100 value="${fruit.name}" /></td>
-           </tr>`
+         menu[fruit.optionId] = fruit.name
     });
-    for(var i = fruits.length; i < 4; i++){
-        list = list + `<tr>
-               <td>${i+1}</td>
-               <td><input size=100/></td>
-           </tr>`
+    for(var i = 0; i < 4; i++) {
+            list = list + `<tr>
+               <td>${i + 1}</td>
+               <td><input size=100 value="${menu[i]}" /></td>
+            </tr>`
     }
-    if (list.length > 0) {
-        list = ''
-            + '<tr><th>Day</th><th>Name</th></tr>'
-            + list
-            + '';
-    } else {
-        list = "No fruits in database"
-    }
+    list = ''
+        + '<tr><th>Option</th><th>Name</th></tr>'
+        + list
+        + '';
     $(table).html(list);
 }
 
@@ -52,11 +46,10 @@ function submitMenu(table, url) {
 	var menu = document.getElementById(table);
     var data = [];
             
+    var day = $('#day').val();
     for (var i = 1, row; row = menu.rows[i]; i++) {
-        //iterate through rows
-        //rows would be accessed using the "row" variable assigned in the for loop
         var main = row.cells[1].querySelector('input').value;
-        data.push({day: i, name: main + ""});
+        data.push({menu: 'lunch', day: day, optionId: row.cells[0].innerText - 1, name: main + ""});
     }
     $.post({
         url: url,
@@ -65,7 +58,7 @@ function submitMenu(table, url) {
         success: function (data) {
            alert('Success!')
         }
-    }).then(alert('Submitted new main ' + data)).then(refresh);
+    }).then(alert('Submitted new main ' + JSON.stringify(data))).then(refresh);
 }
 
 $(document).ready(function () {

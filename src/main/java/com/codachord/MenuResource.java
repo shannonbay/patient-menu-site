@@ -7,6 +7,9 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.persistence.EntityGraph;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -16,6 +19,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.hibernate.Session;
 import org.jboss.logging.Logger;
 
 import io.smallrye.mutiny.Multi;
@@ -31,6 +35,9 @@ public class MenuResource {
     @Inject
     @ConfigProperty(name = "myapp.schema.create", defaultValue = "true")
     boolean schemaCreate;
+
+    @Inject
+    Session session;
 
     @PostConstruct
     void config() {
@@ -48,54 +55,40 @@ public class MenuResource {
     
     @POST
     @Path("dinner")
+    @Transactional
     @Consumes(MediaType.APPLICATION_JSON)
-    public Multi<Response> dinner(List<MenuItem> menuitems) {
-    	return Menu.dinner.save(menuitems, client)
-                .onItem().transform(id -> URI.create("/menu/dinner"))
-                .onItem().transform(uri -> Response.created(uri).build());
-    }
-    
-    @POST
-    @Path("lunch")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Multi<Response> lunch(List<MenuItem> menuitems) {
-    	return Menu.lunch.save(menuitems, client)
-                .onItem().transform(id -> URI.create("/menu/lunch"))
-                .onItem().transform(uri -> Response.created(uri).build());
+    public Multi<Response> dinner(List<Dinner> menuitems) {
+        return Multi.createFrom().iterable(menuitems).onItem().transform(lunch -> { session.saveOrUpdate(lunch); return Response.accepted().build(); } );
     }
 
     @POST
-    @Path("item")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Uni<Response> create(MenuItem fruit) {
-        log.info("Create menu item " + fruit);
-        return fruit.save(client)
-                .onItem().transform(id -> URI.create("/menu/" + id))
-                .onItem().transform(uri -> Response.created(uri).build());
+    @Path("lunch")
+    @Transactional
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Multi<Response> lunch(List<Lunch> menuitems) {
+        return Multi.createFrom().iterable(menuitems).onItem().transform(lunch -> { session.saveOrUpdate(lunch); return Response.accepted().build(); } );
+    }
+
+    @GET
+    @Transactional
+    @Path("lunch/{day}")
+    public List<Lunch> getLunch(@PathParam("day") String day) {
+        List<Lunch> dinners = session.createQuery("FROM " + Lunch.class.getSimpleName() + " where day = '" + day + "'").getResultList();
+        return dinners;
+    }
+
+    @GET
+    @Transactional
+    @Path("dinner/{day}")
+    public List<Dinner> getDinner(@PathParam("day") String day) {
+        List<Dinner> dinners = session.createQuery("FROM " + Dinner.class.getSimpleName() + " where day = '" + day + "'").getResultList();
+        return dinners;
     }
 
     @GET
     @Path("calendar_start")
     public Uni<MenuCalendar> getCalendarStart() {
         return MenuCalendar.findById(client);
-    }
-
-    @GET
-    @Path("lunch")
-    public Multi<MenuItem> lunch() {
-        return Menu.lunch.findAll(client);
-    }
-    
-    @GET
-    @Path("dinner")
-    public Multi<MenuItem> dinner() {
-        return Menu.dinner.findAll(client);
-    }
-
-    @GET
-    @Path("{menu}/{day}")
-    public Multi<MenuItem> getSingle(@PathParam("menu") String menu, @PathParam("day") String day) {
-        return Menu.valueOf(menu).findByDay(client, day);
     }
 
     private void initdb() {
